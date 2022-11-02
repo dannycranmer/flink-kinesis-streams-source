@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Properties;
@@ -40,12 +41,19 @@ public class KinesisShardSplitReader implements SplitReader<UserRecord, KinesisS
     private final MetricGroup metricGroup;
     private final Properties consumerConfig;
     private final Deque<KinesisShardSplitConsumer> roundRobinQueue = new ArrayDeque<>();
+    private final Set<String> finishedSplits = new HashSet<>();
 
     @Override
     @SneakyThrows
     public RecordsWithSplitIds<UserRecord> fetch() throws IOException {
         KinesisShardSplitConsumer consumer = roundRobinQueue.poll();
-        roundRobinQueue.add(consumer);
+
+        if (consumer.isShardComplete()) {
+            log.info("Marking shard " + consumer.getSplit().splitId() + " as finished");
+            finishedSplits.add(consumer.getSplit().splitId());
+        } else {
+            roundRobinQueue.add(consumer);
+        }
 
         System.out.println("Consuming from Shard: " + consumer.getSplit().splitId());
 
@@ -98,6 +106,7 @@ public class KinesisShardSplitReader implements SplitReader<UserRecord, KinesisS
         @Nullable
         @Override
         public String nextSplit() {
+            log.info("nextRecordFromSplit");
             return recordIterator.hasNext() ? split.splitId() : null;
         }
 
@@ -109,6 +118,7 @@ public class KinesisShardSplitReader implements SplitReader<UserRecord, KinesisS
 
         @Override
         public Set<String> finishedSplits() {
+            log.info("finishedSplits");
             // We need to return shards here that are finished
             return emptySet();
         }

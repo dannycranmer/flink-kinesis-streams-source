@@ -17,4 +17,10 @@ public class KinesisShardSplit implements SourceSplit {
         return shardHandle.getShard().getShardId();
     }
 
+    @Override
+    public String toString() {
+        return "KinesisShardSplit{" +
+            "shardHandle=" + shardHandle +
+            '}';
+    }
 }

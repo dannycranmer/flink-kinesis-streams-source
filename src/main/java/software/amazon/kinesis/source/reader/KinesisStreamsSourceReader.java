@@ -1,5 +1,6 @@
 package software.amazon.kinesis.source.reader;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordEmitter;
@@ -14,6 +15,7 @@ import software.amazon.kinesis.source.split.KinesisShardSplitState;
 
 import java.util.Map;
 
+@Slf4j
 public class KinesisStreamsSourceReader<T> extends SingleThreadMultiplexSourceReaderBase<
         UserRecord, T, KinesisShardSplit, KinesisShardSplitState> {
 
@@ -23,7 +25,7 @@ public class KinesisStreamsSourceReader<T> extends SingleThreadMultiplexSourceRe
 
     @Override
     protected void onSplitFinished(Map<String, KinesisShardSplitState> map) {
-
+        log.info("onSplitFinished");
     }
 
     @Override
