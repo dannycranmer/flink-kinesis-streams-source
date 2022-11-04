@@ -9,6 +9,7 @@ import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
+import org.apache.flink.connector.base.source.reader.fetcher.SingleThreadFetcherManager;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.kinesis.shaded.com.amazonaws.services.kinesis.clientlibrary.types.UserRecord;
@@ -19,7 +20,6 @@ import software.amazon.kinesis.source.enumerator.KinesisStreamsSourceEnumeratorS
 import software.amazon.kinesis.source.enumerator.KinesisStreamsSourceEnumeratorStateSerializer;
 import software.amazon.kinesis.source.reader.KinesisRecordEmitter;
 import software.amazon.kinesis.source.reader.KinesisStreamsSourceReader;
-import software.amazon.kinesis.source.reader.fetcher.KinesisSourceFetcherManager;
 import software.amazon.kinesis.source.reader.KinesisShardSplitReader;
 import software.amazon.kinesis.source.split.KinesisShardSplit;
 import software.amazon.kinesis.source.split.KinesisShardSplitSerializer;
@@ -60,7 +60,7 @@ public class KinesisStreamsSource<T> implements Source<T, KinesisShardSplit, Kin
 
         return new KinesisStreamsSourceReader<>(
                 elementsQueue,
-                new KinesisSourceFetcherManager(elementsQueue, splitReaderSupplier::get),
+                new SingleThreadFetcherManager<UserRecord, KinesisShardSplit>(elementsQueue, splitReaderSupplier::get),
                 recordEmitter,
                 toConfiguration(consumerConfig),
                 sourceReaderContext);
