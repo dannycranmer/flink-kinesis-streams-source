@@ -48,14 +48,17 @@ public class KinesisShardSplitReader implements SplitReader<UserRecord, KinesisS
     public RecordsWithSplitIds<UserRecord> fetch() throws IOException {
         KinesisShardSplitConsumer consumer = roundRobinQueue.poll();
 
+        if (consumer == null) {
+            // No more records to poll, close the consumer
+            close();
+        }
+
         if (consumer.isShardComplete()) {
             log.info("Marking shard " + consumer.getSplit().splitId() + " as finished");
             finishedSplits.add(consumer.getSplit().splitId());
         } else {
             roundRobinQueue.add(consumer);
         }
-
-        System.out.println("Consuming from Shard: " + consumer.getSplit().splitId());
 
         return new KinesisShardSplitRecords(consumer.getSplit(), consumer.getNextBatch());
     }
@@ -67,7 +70,7 @@ public class KinesisShardSplitReader implements SplitReader<UserRecord, KinesisS
 
         for (KinesisShardSplit split : splitsChange.splits()) {
             final StartingPosition startingPosition = StartingPosition.continueFromSequenceNumber(SENTINEL_LATEST_SEQUENCE_NUM.get());
-            final RecordPublisher recordPublisher = PUBLISHER_FACTORY.create(startingPosition, consumerConfig, metricGroup, split.getShardHandle());
+            final RecordPublisher recordPublisher = PUBLISHER_FACTORY.create(startingPosition, consumerConfig, metricGroup.addGroup("shardId", split.splitId()), split.getShardHandle());
 
             roundRobinQueue.add(KinesisShardSplitConsumer.builder()
                     .recordPublisher(recordPublisher)
@@ -106,13 +109,14 @@ public class KinesisShardSplitReader implements SplitReader<UserRecord, KinesisS
         @Nullable
         @Override
         public String nextSplit() {
-            log.info("nextRecordFromSplit");
+            log.info("nextSplit {} ", split.splitId());
             return recordIterator.hasNext() ? split.splitId() : null;
         }
 
         @Nullable
         @Override
         public UserRecord nextRecordFromSplit() {
+            log.info("nextRecordFromSplit {} ", split.splitId());
             return recordIterator.hasNext() ? recordIterator.next() : null;
         }
 

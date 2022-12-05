@@ -12,7 +12,7 @@ import java.util.Properties;
 
 @Slf4j
 public class KinesisStreamsSourceExample {
-    private static final String STREAM = "stream";
+    private static final String STREAM = "LoadTestBeta_Input_27";
     private static final String REGION = "us-east-1";
 
     public static void main(String[] args) throws Exception {
@@ -28,7 +28,7 @@ public class KinesisStreamsSourceExample {
                 .deserializationSchema(new SimpleStringSchema())
                 .build();
 
-        env.fromSource(source, WatermarkStrategy.noWatermarks(), "kds-source")
+        env.fromSource(source, WatermarkStrategy.forMonotonousTimestamps(), "kds-source")
                 .returns(String.class)
                 .print();
 
